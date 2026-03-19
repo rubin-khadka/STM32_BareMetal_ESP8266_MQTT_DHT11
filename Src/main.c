@@ -14,6 +14,8 @@
 #include "usart2.h"
 #include "tasks.h"
 #include "dht11.h"
+#include "i2c1.h"
+#include "lcd.h"
 
 int main(void)
 {
@@ -22,7 +24,16 @@ int main(void)
   TIMER2_Init();
   USART1_Init();
   USART2_Init();
+  I2C1_Init();
+  LCD_Init();
   DHT11_Init();
+
+  LCD_Clear();
+  LCD_SendString("STM32 PROJECT");
+  LCD_SetCursor(1, 0);
+  LCD_SendString("INITIALIZING...");
+
+  TIMER2_Delay_ms(2000);
 
   // Debug startup messages using UART2
   USART2_SendString("==========================================\n");
@@ -44,8 +55,8 @@ int main(void)
     USART2_SendString("Failed to connect to wifi...\n");
   }
 
-  // Initialize DHT11
-  DHT11_Init();
+  // Setup TIM3 for 10ms control loop
+  TIMER3_SetupPeriod(10);  // 10ms period
 
   while(1)
   {

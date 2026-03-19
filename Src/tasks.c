@@ -41,13 +41,13 @@ void Task_DHT11_Read(void)
       if(calc == checksum)
       {
         // Humidity: combine integer and decimal parts
-        dht11_humidity = (float)hum1 + (float)hum2 / 10.0f;
+        dht11_humidity = (float) hum1 + (float) hum2 / 10.0f;
 
         // Temperature: check sign bit (0x80) for negative values
-        if (temp1 & 0x80)
-            dht11_temperature = -((float)(temp1 & 0x7F) + (float)temp2 / 10.0f);
+        if(temp1 & 0x80)
+          dht11_temperature = -((float) (temp1 & 0x7F) + (float) temp2 / 10.0f);
         else
-            dht11_temperature = (float)temp1 + (float)temp2 / 10.0f;
+          dht11_temperature = (float) temp1 + (float) temp2 / 10.0f;
 
         break;
       }

@@ -20,10 +20,6 @@ void LCD_SendData(uint8_t data);
 void LCD_SendString(char *str);
 void LCD_Clear(void);
 void LCD_SetCursor(uint8_t row, uint8_t col);
-void LCD_DisplayReading(uint8_t temp_int, uint8_t temp_dec, uint8_t hum_int, uint8_t hum_dec);
-void LCD_DisplayError(void);
-void LCD_DisplayHeader(void);
-void LCD_DisplayGyro(int16_t gx, int16_t gy, int16_t gz);
-void LCD_DisplayAccel(int16_t ax, int16_t ay, int16_t az);
+void LCD_DisplayReading_Temp(uint8_t temp_int, uint8_t temp_dec, uint8_t hum_int, uint8_t hum_dec);
 
 #endif /* LCD_H_ */
