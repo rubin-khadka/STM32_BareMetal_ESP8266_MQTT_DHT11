@@ -1,0 +1,4 @@
+# STM32 Project - Git Ignore
+
+Debug/
+.settings/
