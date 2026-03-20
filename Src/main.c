@@ -19,7 +19,7 @@
 
 #define DHI_READ_TICK       100
 #define LCD_UPDATE_TICK     10
-#define MQTT_PUBLISH_TICK   500
+#define MQTT_PUBLISH_TICK   1000
 
 int main(void)
 {
@@ -37,17 +37,10 @@ int main(void)
   uint16_t lcd_count = 0;
   uint16_t mqtt_count = 0;
 
-  LCD_Clear();
-  LCD_SendString("STM32 PROJECT");
-  LCD_SetCursor(1, 0);
-  LCD_SendString("INITIALIZING...");
-
-  TIMER2_Delay_ms(2000);
-
   // Debug startup messages using UART2
-  USART2_SendString("==========================================\n");
-  USART2_SendString("Connecting to WIFI and Getting IP Address\n");
-  USART2_SendString("==========================================\n");
+  USART2_SendString("============================\n");
+  USART2_SendString("STM32 Project Initialization\n");
+  USART2_SendString("============================\n");
 
   char ip_buf[16];
 
@@ -59,10 +52,15 @@ int main(void)
   USART2_SendString("ESP8266 Initialized\n");
 
   // Connect to WiFi
-  if(ESP_ConnectWiFi("xxxx", "xxxx!", ip_buf, sizeof(ip_buf)) != ESP8266_OK)
+  if(ESP_ConnectWiFi("XXXX", "XXXXX!", ip_buf, sizeof(ip_buf)) != ESP8266_OK)
   {
     USART2_SendString("Failed to connect to wifi...\n");
   }
+
+  LCD_Clear();
+  LCD_SendString("STM32 PROJECT");
+  LCD_SetCursor(1, 0);
+  LCD_SendString("INITIALIZING...");
 
   MQTT_Init();
 
@@ -85,6 +83,12 @@ int main(void)
     {
       Task_LCD_Update();
       lcd_count = 0;
+    }
+
+    if(mqtt_count++ >= MQTT_PUBLISH_TICK)
+    {
+      Task_MQTT_Publish();
+      mqtt_count = 0;
     }
 
     TIMER3_WaitPeriod();
