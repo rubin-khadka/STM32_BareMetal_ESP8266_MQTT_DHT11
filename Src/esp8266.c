@@ -68,14 +68,15 @@ static char* ESP_StrStr(const char *haystack, const char *needle)
 }
 
 // Copy string with length limit
-static void ESP_StrCopy(char *dest, const char *src, uint16_t n)
+static uint16_t ESP_StrCopy(char *dest, const char *src, uint16_t n)
 {
-  uint16_t i;
-  for(i = 0; i < n - 1 && src[i] != '\0'; i++)
-  {
-    dest[i] = src[i];
-  }
-  dest[i] = '\0';
+    uint16_t i;
+    for(i = 0; i < n - 1 && src[i] != '\0'; i++)
+    {
+        dest[i] = src[i];
+    }
+    dest[i] = '\0';
+    return i;
 }
 
 // Convert integer to string
@@ -202,6 +203,41 @@ static void ESP_FormatCmdWithNum(char *buffer, uint16_t buf_len, const char *for
   buffer[i] = '\0';
 }
 
+// Build TCP connect command: AT+CIPSTART="TCP","broker",port\r\n
+static void Build_TCP_Connect(char *buffer, uint16_t buf_len, const char *broker, uint16_t port)
+{
+  uint16_t i = 0;
+  char port_str[6];
+  uint8_t p = 0;
+
+  // Convert port number to string
+  if(port == 0)
+  {
+    port_str[p++] = '0';
+  }
+  else
+  {
+    // Handle different port sizes
+    if(port >= 10000)
+      port_str[p++] = '0' + (port / 10000) % 10;
+    if(port >= 1000)
+      port_str[p++] = '0' + (port / 1000) % 10;
+    if(port >= 100)
+      port_str[p++] = '0' + (port / 100) % 10;
+    if(port >= 10)
+      port_str[p++] = '0' + (port / 10) % 10;
+    port_str[p++] = '0' + (port % 10);
+  }
+  port_str[p] = '\0';
+
+  // Build: AT+CIPSTART="TCP","broker",port\r\n
+  i += ESP_StrCopy(buffer + i, "AT+CIPSTART=\"TCP\",\"", buf_len - i);
+  i += ESP_StrCopy(buffer + i, broker, buf_len - i);
+  i += ESP_StrCopy(buffer + i, "\",", buf_len - i);
+  i += ESP_StrCopy(buffer + i, port_str, buf_len - i);
+  i += ESP_StrCopy(buffer + i, "\r\n", buf_len - i);
+}
+
 // ESP8266 Driver Implementation
 ESP8266_ConnectionState ESP_ConnState = ESP8266_DISCONNECTED;
 static char esp_rx_buffer[512];
@@ -314,11 +350,14 @@ ESP8266_Status ESP_MQTT_Connect(
 
   USART2_SendString("MQTT_Connect: Connecting to broker\r\n");
 
-  // TCP connect
-  ESP_FormatCmdWithNum(cmd, sizeof(cmd), "AT+CIPSTART=\"TCP\",\"%s\",%d\r\n", port);
-  // Note: This is simplified - you'll need a more complex formatter for broker string
-  // For now, use your existing method or enhance ESP_FormatCommand
+  // Build TCP connect command correctly
+  Build_TCP_Connect(cmd, sizeof(cmd), broker, port);
 
+  // Debug: show what we're sending
+  USART2_SendString("Sending: ");
+  USART2_SendString(cmd);
+
+  // Step 1: TCP connect to broker
   res = ESP_SendCommand(cmd, "CONNECT", 5000);
   if(res != ESP8266_OK)
   {
@@ -326,10 +365,16 @@ ESP8266_Status ESP_MQTT_Connect(
     return res;
   }
 
-  // Build MQTT CONNECT packet
+  USART2_SendString("MQTT_Connect: TCP connected!\r\n");
+
+  // Step 2: Build MQTT CONNECT packet
   len = MQTT_BuildConnect(packet, clientID, username, password, keepalive);
 
-  // Send packet length
+  USART2_SendString("MQTT_Connect: Built CONNECT packet, size: ");
+  USART2_SendNumber(len);
+  USART2_SendString("\r\n");
+
+  // Step 3: Send packet length to ESP8266
   ESP_FormatCmdWithNum(cmd, sizeof(cmd), "AT+CIPSEND=%d\r\n", len);
   res = ESP_SendCommand(cmd, ">", 2000);
   if(res != ESP8266_OK)
@@ -338,7 +383,7 @@ ESP8266_Status ESP_MQTT_Connect(
     return res;
   }
 
-  // Send packet and wait for CONNACK
+  // Step 4: Send the MQTT CONNECT packet and wait for CONNACK
   res = ESP_SendBinary(packet, len, "\x20\x02\x00\x00", 5000);
   if(res != ESP8266_OK)
   {
@@ -346,7 +391,7 @@ ESP8266_Status ESP_MQTT_Connect(
     return res;
   }
 
-  USART2_SendString("MQTT_Connect: Success\r\n");
+  USART2_SendString("MQTT_Connect: Success!\r\n");
   return ESP8266_OK;
 }
 

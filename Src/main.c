@@ -17,8 +17,9 @@
 #include "i2c1.h"
 #include "lcd.h"
 
-#define DHI_READ_TICK     100
-#define LCD_UPDATE_TICK   10
+#define DHI_READ_TICK       100
+#define LCD_UPDATE_TICK     10
+#define MQTT_PUBLISH_TICK   500
 
 int main(void)
 {
@@ -32,8 +33,9 @@ int main(void)
   DHT11_Init();
 
   // Loop counters
-  uint8_t dht_count = 0;
-  uint8_t lcd_count = 0;
+  uint16_t dht_count = 0;
+  uint16_t lcd_count = 0;
+  uint16_t mqtt_count = 0;
 
   LCD_Clear();
   LCD_SendString("STM32 PROJECT");
@@ -57,10 +59,12 @@ int main(void)
   USART2_SendString("ESP8266 Initialized\n");
 
   // Connect to WiFi
-  if(ESP_ConnectWiFi("mynoobu", "Sarah159!", ip_buf, sizeof(ip_buf)) != ESP8266_OK)
+  if(ESP_ConnectWiFi("xxxx", "xxxx!", ip_buf, sizeof(ip_buf)) != ESP8266_OK)
   {
     USART2_SendString("Failed to connect to wifi...\n");
   }
+
+  MQTT_Init();
 
   // Setup TIM3 for 10ms control loop
   TIMER3_SetupPeriod(10);  // 10ms period

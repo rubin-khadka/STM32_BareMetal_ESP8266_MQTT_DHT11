@@ -13,5 +13,7 @@ extern volatile float dht11_temperature;
 
 void Task_DHT11_Read(void);
 void Task_LCD_Update(void);
+void MQTT_Init(void);
+void Task_MQTT_Publish(void);
 
 #endif /* INC_TASKS_H_ */
