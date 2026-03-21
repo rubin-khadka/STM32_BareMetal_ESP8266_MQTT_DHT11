@@ -42,6 +42,11 @@ int main(void)
   USART2_SendString("STM32 Project Initialization\n");
   USART2_SendString("============================\n");
 
+  LCD_Clear();
+  LCD_SendString("STM32 PROJECT");
+  LCD_SetCursor(1, 0);
+  LCD_SendString("INITIALIZING...");
+
   char ip_buf[16];
 
   // Initialize ESP8266
@@ -51,16 +56,21 @@ int main(void)
   }
   USART2_SendString("ESP8266 Initialized\n");
 
+  LCD_Clear();
+  LCD_SendString("CONNECTING");
+  LCD_SetCursor(1, 5);
+  LCD_SendString("TO WIFI ...");
+
   // Connect to WiFi
-  if(ESP_ConnectWiFi("xxxx", "xxxxx!", ip_buf, sizeof(ip_buf)) != ESP8266_OK)
+  if(ESP_ConnectWiFi("xxxxx", "xxxxx!", ip_buf, sizeof(ip_buf)) != ESP8266_OK)
   {
     USART2_SendString("Failed to connect to wifi...\n");
   }
 
   LCD_Clear();
-  LCD_SendString("STM32 PROJECT");
+  LCD_SendString("WIFI CONNECTED");
   LCD_SetCursor(1, 0);
-  LCD_SendString("INITIALIZING...");
+  LCD_SendString("CONNECTING MQTT");
 
   // Connect to MQTT
   MQTT_Init();
