@@ -220,7 +220,7 @@ void Task_MQTT_Publish(void)
   // Only publish if MQTT is connected
   if(!mqtt_connected)
   {
-    USART2_SendString("MQTT: Not connected, skipping publish\r\n");
+    USART2_SendString("MQTT: Not connected, skipping publish\n");
     return;
   }
 
@@ -230,13 +230,11 @@ void Task_MQTT_Publish(void)
   // Publish to HiveMQ topic
   if(ESP_MQTT_Publish(MQTT_TOPIC, payload, 0) == ESP8266_OK)
   {
-    USART2_SendString("MQTT: Published -> ");
-    USART2_SendString(payload);
-    USART2_SendString("\r\n");
+    USART2_SendString("MQTT: Published\n");
   }
   else
   {
-    USART2_SendString("MQTT: Publish failed!\r\n");
+    USART2_SendString("MQTT: Publish failed!\n");
   }
 }
 

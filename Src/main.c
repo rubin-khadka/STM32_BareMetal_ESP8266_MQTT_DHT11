@@ -52,7 +52,7 @@ int main(void)
   USART2_SendString("ESP8266 Initialized\n");
 
   // Connect to WiFi
-  if(ESP_ConnectWiFi("XXXX", "XXXXX!", ip_buf, sizeof(ip_buf)) != ESP8266_OK)
+  if(ESP_ConnectWiFi("xxxx", "xxxxx!", ip_buf, sizeof(ip_buf)) != ESP8266_OK)
   {
     USART2_SendString("Failed to connect to wifi...\n");
   }
@@ -62,6 +62,7 @@ int main(void)
   LCD_SetCursor(1, 0);
   LCD_SendString("INITIALIZING...");
 
+  // Connect to MQTT
   MQTT_Init();
 
   // Setup TIM3 for 10ms control loop

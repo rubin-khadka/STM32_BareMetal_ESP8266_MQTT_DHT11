@@ -1,5 +1,5 @@
 /*
- * esp8266.c - Lightweight version without stdio/stdlib
+ * esp8266.c
  *
  *  Created on: Mar 19, 2026
  *      Author: Rubin Khadka
@@ -70,13 +70,13 @@ static char* ESP_StrStr(const char *haystack, const char *needle)
 // Copy string with length limit
 static uint16_t ESP_StrCopy(char *dest, const char *src, uint16_t n)
 {
-    uint16_t i;
-    for(i = 0; i < n - 1 && src[i] != '\0'; i++)
-    {
-        dest[i] = src[i];
-    }
-    dest[i] = '\0';
-    return i;
+  uint16_t i;
+  for(i = 0; i < n - 1 && src[i] != '\0'; i++)
+  {
+    dest[i] = src[i];
+  }
+  dest[i] = '\0';
+  return i;
 }
 
 // Convert integer to string
@@ -277,16 +277,14 @@ ESP8266_Status ESP_Init(void)
     return res;
   }
 
-  USART2_SendString("ESP_Init: Success\r\n");
   return ESP8266_OK;
 }
 
+// Connect Wifi
 ESP8266_Status ESP_ConnectWiFi(const char *ssid, const char *password, char *ip_buffer, uint16_t buffer_len)
 {
   char cmd[128];
   ESP8266_Status result;
-
-  USART2_SendString("ESP_ConnectWiFi: Setting station mode\r\n");
 
   // Set station mode
   ESP_FormatCommand(cmd, sizeof(cmd), "AT+CWMODE=1\r\n", NULL, NULL);
@@ -322,19 +320,17 @@ ESP8266_Status ESP_ConnectWiFi(const char *ssid, const char *password, char *ip_
     return result;
   }
 
-  USART2_SendString("ESP_ConnectWiFi: IP: ");
-  USART2_SendString(ip_buffer);
-  USART2_SendString("\r\n");
-
   return ESP8266_OK;
 }
 
+// Get connection state
 ESP8266_ConnectionState ESP_GetConnectionState(void)
 {
   return ESP_ConnState;
 }
 
 // MQTT Functions
+// MQTT connect
 ESP8266_Status ESP_MQTT_Connect(
     const char *broker,
     uint16_t port,
@@ -348,14 +344,8 @@ ESP8266_Status ESP_MQTT_Connect(
   uint16_t len = 0;
   ESP8266_Status res;
 
-  USART2_SendString("MQTT_Connect: Connecting to broker\r\n");
-
   // Build TCP connect command correctly
   Build_TCP_Connect(cmd, sizeof(cmd), broker, port);
-
-  // Debug: show what we're sending
-  USART2_SendString("Sending: ");
-  USART2_SendString(cmd);
 
   // Step 1: TCP connect to broker
   res = ESP_SendCommand(cmd, "CONNECT", 5000);
@@ -365,14 +355,8 @@ ESP8266_Status ESP_MQTT_Connect(
     return res;
   }
 
-  USART2_SendString("MQTT_Connect: TCP connected!\r\n");
-
   // Step 2: Build MQTT CONNECT packet
   len = MQTT_BuildConnect(packet, clientID, username, password, keepalive);
-
-  USART2_SendString("MQTT_Connect: Built CONNECT packet, size: ");
-  USART2_SendNumber(len);
-  USART2_SendString("\r\n");
 
   // Step 3: Send packet length to ESP8266
   ESP_FormatCmdWithNum(cmd, sizeof(cmd), "AT+CIPSEND=%d\r\n", len);
@@ -391,10 +375,10 @@ ESP8266_Status ESP_MQTT_Connect(
     return res;
   }
 
-  USART2_SendString("MQTT_Connect: Success!\r\n");
   return ESP8266_OK;
 }
 
+// Publish to MQTT
 ESP8266_Status ESP_MQTT_Publish(const char *topic, const char *message, uint8_t qos)
 {
   char cmd[32];
@@ -450,10 +434,10 @@ ESP8266_Status ESP_MQTT_Publish(const char *topic, const char *message, uint8_t 
     return res;
   }
 
-  USART2_SendString("MQTT_Publish: Success\r\n");
   return ESP8266_OK;
 }
 
+// Subscribe to the MQTT
 ESP8266_Status ESP_MQTT_Subscribe(const char *topic, uint8_t qos)
 {
   char cmd[32];
@@ -511,6 +495,7 @@ ESP8266_Status ESP_MQTT_Subscribe(const char *topic, uint8_t qos)
   return ESP8266_OK;
 }
 
+// Ping MQTT
 ESP8266_Status ESP_MQTT_Ping(void)
 {
   char cmd[32];
@@ -549,8 +534,6 @@ ESP8266_Status ESP_MQTT_HandleIncoming(
     char *msg_buffer,
     uint16_t msg_buf_len)
 {
-  // This function would parse +IPD messages from ESP8266
-  // For now, return NOT_IMPLEMENTED
   return ESP8266_ERROR;
 }
 
@@ -559,10 +542,6 @@ static ESP8266_Status ESP_GetIP(char *ip_buffer, uint16_t buffer_len)
 {
   for(int attempt = 1; attempt <= 3; attempt++)
   {
-    USART2_SendString("ESP_GetIP: Attempt ");
-    USART2_SendNumber(attempt);
-    USART2_SendString("\r\n");
-
     // Send AT+CIFSR
     ESP8266_Status result = ESP_SendCommand("AT+CIFSR\r\n", "OK", 5000);
     if(result != ESP8266_OK)
@@ -594,7 +573,7 @@ static ESP8266_Status ESP_GetIP(char *ip_buffer, uint16_t buffer_len)
           break;
         }
 
-        USART2_SendString("ESP_GetIP: Found IP\r\n");
+        USART2_SendString("ESP_GetIP: IP address found\r\n");
         ESP_ConnState = ESP8266_CONNECTED_IP;
         return ESP8266_OK;
       }
@@ -623,8 +602,6 @@ static ESP8266_Status ESP_SendCommand(const char *cmd, const char *ack, uint32_t
   }
   idx = 0;
 
-  USART2_SendString(">> ");
-  USART2_SendString(cmd);
   if(cmd[ESP_StrLen(cmd) - 1] != '\n')
   {
     USART2_SendString("\r\n");
@@ -651,15 +628,11 @@ static ESP8266_Status ESP_SendCommand(const char *cmd, const char *ack, uint32_t
       if(!found && ESP_StrStr(esp_rx_buffer, ack))
       {
         found = 1;
-        USART2_SendString("<< Found ACK: ");
-        USART2_SendString(ack);
-        USART2_SendString("\r\n");
       }
 
       // Check for ERROR
       if(ESP_StrStr(esp_rx_buffer, "ERROR"))
       {
-        USART2_SendString("<< Got ERROR\r\n");
         return ESP8266_ERROR;
       }
     }
@@ -670,11 +643,9 @@ static ESP8266_Status ESP_SendCommand(const char *cmd, const char *ack, uint32_t
 
   if(idx == 0)
   {
-    USART2_SendString("<< No response\r\n");
     return ESP8266_NO_RESPONSE;
   }
 
-  USART2_SendString("<< Timeout\r\n");
   return ESP8266_TIMEOUT;
 }
 
@@ -691,10 +662,6 @@ static ESP8266_Status ESP_SendBinary(uint8_t *bin, uint16_t len, const char *ack
     esp_rx_buffer[idx] = 0;
   }
   idx = 0;
-
-  USART2_SendString(">> Sending binary (");
-  USART2_SendNumber(len);
-  USART2_SendString(" bytes)\r\n");
 
   tickstart = TIMER2_GetMillis();
 
@@ -716,15 +683,11 @@ static ESP8266_Status ESP_SendBinary(uint8_t *bin, uint16_t len, const char *ack
       if(!found && ESP_StrStr(esp_rx_buffer, ack))
       {
         found = 1;
-        USART2_SendString("<< Found ACK: ");
-        USART2_SendString(ack);
-        USART2_SendString("\r\n");
       }
 
       // Check for ERROR
       if(ESP_StrStr(esp_rx_buffer, "ERROR"))
       {
-        USART2_SendString("<< Got ERROR\r\n");
         return ESP8266_ERROR;
       }
     }
@@ -733,7 +696,6 @@ static ESP8266_Status ESP_SendBinary(uint8_t *bin, uint16_t len, const char *ack
   if(found)
     return ESP8266_OK;
 
-  USART2_SendString("<< Binary send timeout\r\n");
   return ESP8266_TIMEOUT;
 }
 
